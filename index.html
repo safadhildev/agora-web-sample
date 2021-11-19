@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Basic Live -- Agora</title>
+    <link rel="stylesheet" href="./index.css">
+</head>
+
+<body>
+    <div class="form" id="agoraForm">
+        <div>
+            <h2>Agora Example</h2>
+        </div>
+        <!-- <input id="inAppId" placeholder="App ID" />
+        <input id="inChannel" placeholder="Channel Name" />
+        <input id="inToken" placeholder="Token" /> -->
+        <input id="inUid" type="text" pattern="^[0-9]*$" placeholder="Enter an ID" />
+        <button id="btnJoin" onclick="onJoin()" disabled>Join</button>
+    </div>
+
+    <div class="live" id="agoraRoom">
+        <!-- Participant List -->
+        <div class="participants">
+            <ul id="list"></ul>
+        </div>
+        <!-- Screen Share -->
+        <div class="screen-share" id="screenShare">
+            <p class="screen-share-uid" id="screenShareUid"></p>
+        </div>
+    </div>
+    </div>
+
+
+    <script src="assets/jquery-3.4.1.min.js"></script>
+    <!-- <script src="assets/bootstrap.bundle.min.js"></script> -->
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/platform/1.3.5/platform.min.js"></script>
+    <script src="./index.js"></script>
+</body>
+
+</html>

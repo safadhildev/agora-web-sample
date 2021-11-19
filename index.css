@@ -1,0 +1,108 @@
+.screen-share{
+    display: none;
+    height:500px;
+    width:100%;
+    margin:10px 0;
+    background-color: #000;
+}
+
+.participants ul{
+    display: flex;
+    flex-direction: row;
+}
+
+
+
+.player {
+    display: flex;
+    background-color:#3c4044;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    flex-direction: column;
+    width:300px;
+    height:200px;
+    margin: 0 20px 0 0;   
+}
+
+.player-user-placeholder{
+    margin: 25%;
+    padding: 10px 20px;
+    border-radius: 50%;
+    justify-content: center;
+    text-align: center;
+    background-color: #202123;
+    align-self: center;
+}
+
+.player-user-placeholder p {
+    margin: 0;
+    font-size: 30px;
+    font-weight: bold;
+    color:#FFF;
+}
+
+.player-user-info{
+    position: absolute;
+    z-index: 1;
+    top:5px;
+    left:5px;
+    background-color: #202123;
+    border-radius: 5px;
+    padding:5px;
+}
+
+.player-user-mic-info {
+    position: absolute;
+    z-index: 1;
+    top:5px;
+    right:5px;
+    background-color: #202123;
+    border-radius: 5px;
+    padding:5px;
+}
+
+.player-user-info p,
+.player-user-mic-info p {
+    padding:0;
+    margin:0;
+    font-size: 12px;
+    font-weight: bold;
+    color:#FFF;
+}
+
+.player-buttons-wrapper{
+    position: absolute;
+    z-index: 1;
+    bottom:0;
+    left:0;
+    right:0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    padding:5px 0;
+}
+
+.remote-users{
+    background-color: #000;
+}
+
+#list{
+    padding:0;
+    list-style-type:none;
+}
+
+
+.screen-share{
+    position: relative;
+}
+
+.screen-share-uid{
+    background-color: #eee;
+    padding: 2px 5px;
+    position: absolute;
+    top:5px;
+    left:5px;
+    width: auto;
+    z-index: 1;
+}
