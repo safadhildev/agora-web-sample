@@ -30,7 +30,7 @@ var screenShareTracks = {
 
 var options = {
   appid: "",
-  channel: "",
+  channel: "myChannel",
   uid: null,
   token: "",
 };
