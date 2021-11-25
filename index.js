@@ -6,13 +6,13 @@ let browser = {
   name: null,
   version: null,
 };
-let remoteScreenShareId = null;
 
 // users uid
 // sample of getting users list from API
 let userLists = [];
 let localUserId = null;
 let localScreenShareId = null;
+let remoteScreenShareId = null;
 let joinedUsers = [];
 
 AgoraRTC.setLogLevel(4);
@@ -29,10 +29,11 @@ var screenShareTracks = {
 };
 
 var options = {
-  appid: "",
+  appid: "bb00c11251fd42beab1cab169192d376",
   channel: "myChannel",
   uid: null,
-  token: "",
+  token:
+    "006bb00c11251fd42beab1cab169192d376IAAzH2TZY0S2VSh0guJI7pLcBqZPFeU/+hx5dEm0eADir0OQEggAAAAAEAAGMGkozjyfYQEAAQDOPJ9h",
 };
 
 window.onload = () => {
@@ -70,6 +71,9 @@ inputUID.addEventListener("input", (event) => {
 
 const handleLeave = async () => {
   try {
+    if (localScreenShareId) {
+      onStopScreenSharing();
+    }
     document.getElementById(`player-${localUserId}`).remove();
     localTracks.videoTrack.close(`player-${localUserId}`);
     localTracks.audioTrack.close();
@@ -144,42 +148,96 @@ const checkCompatibility = () => {
   return false;
 };
 
+const onScreenTrackEnded = async () => {
+  try {
+    let screenShareNode = document.getElementById("screenShare");
+    console.log("stopScreenSharing");
+    screenShareTracks.videoTrack.close("screenShare");
+    await screenClient.unpublish(screenShareTracks.videoTrack);
+    await screenClient.leave();
+    localScreenShareId = null;
+    screenShareTracks = {
+      videoTrack: null,
+      audioTrack: null,
+    };
+    screenShareNode.style.display = "none";
+    document.getElementById("shareBtn").innerHTML = "Share Screen";
+    document.getElementById("shareBtn").onclick = () => {
+      handleShareScreen({ text: "start", localScreenShareId });
+    };
+  } catch (err) {
+    console.log("onScreenTrackEnded :: ", err);
+  }
+};
+
+const onStartScreenSharing = async () => {
+  try {
+    let screenShareNode = document.getElementById("screenShare");
+    const { connectionState } = screenClient;
+    if (connectionState !== "CONNECTED") {
+      localScreenShareId = await screenClient.join(
+        options.appid,
+        options.channel,
+        options.token
+      );
+    }
+    screenShareTracks.videoTrack = await AgoraRTC.createScreenVideoTrack(
+      {
+        encoderConfig: {
+          framerate: 15,
+          width: 1920,
+          height: 1080,
+        },
+      },
+      "auto"
+    );
+    await screenClient.publish(screenShareTracks.videoTrack);
+    screenShareNode.style.display = "block";
+    document.getElementById("screenShareUid").innerHTML = localScreenShareId;
+    screenShareTracks.videoTrack.play("screenShare");
+    screenShareTracks.videoTrack.on("track-ended", onScreenTrackEnded);
+    document.getElementById("shareBtn").innerHTML = "Stop Sharing";
+    document.getElementById("shareBtn").onclick = () => {
+      handleShareScreen({ text: "stop", localScreenShareId });
+    };
+  } catch (err) {
+    console.log.apply("onStartScreenSharing - err :: ", err);
+  }
+};
+
+const onStopScreenSharing = async () => {
+  try {
+    let screenShareNode = document.getElementById("screenShare");
+    screenShareTracks.videoTrack.close("screenShare");
+    await screenClient.unpublish(screenShareTracks.videoTrack);
+    await screenClient.leave();
+    screenShareNode.style.display = "none";
+    document.getElementById("shareBtn").innerHTML = "Share Screen";
+    document.getElementById("shareBtn").onclick = () => {
+      handleShareScreen({ text: "start", localScreenShareId });
+    };
+    localScreenShareId = null;
+    screenShareTracks = {
+      videoTrack: null,
+      audioTrack: null,
+    };
+  } catch (err) {
+    console.log("onStopShareScreen - err :: ", err);
+  }
+};
+
 const handleShareScreen = async ({ text, uid }) => {
   try {
     const isCompatible = checkCompatibility();
     if (!isCompatible) {
       alert("Your browser does not support screen sharing");
     } else {
-      let screenShareNode = document.getElementById("screenShare");
       if (text === "stop") {
         // stop sharing
-        await screenClient.unpublish(screenShareTracks.videoTrack);
-        screenShareNode.style.display = "none";
-        document.getElementById("shareBtn").innerHTML = "Share Screen";
-        document.getElementById("shareBtn").onclick = () => {
-          handleShareScreen({ text: "start", localScreenShareId });
-        };
+        onStopScreenSharing();
       } else {
         // start sharing
-        screenShareTracks.videoTrack = await AgoraRTC.createScreenVideoTrack(
-          {
-            encoderConfig: {
-              framerate: 15,
-              width: 1920,
-              height: 1080,
-            },
-          },
-          "auto"
-        );
-        await screenClient.publish(screenShareTracks.videoTrack);
-        screenShareNode.style.display = "block";
-        document.getElementById("screenShareUid").innerHTML =
-          localScreenShareId;
-        screenShareTracks.videoTrack.play("screenShare");
-        document.getElementById("shareBtn").innerHTML = "Stop Sharing";
-        document.getElementById("shareBtn").onclick = () => {
-          handleShareScreen({ text: "stop", localScreenShareId });
-        };
+        onStartScreenSharing();
       }
     }
   } catch (err) {
@@ -192,11 +250,6 @@ const onJoin = async () => {
     document.getElementById("inUid").disabled = true;
     document.getElementById("btnJoin").disabled = true;
 
-    localScreenShareId = await screenClient.join(
-      options.appid,
-      options.channel,
-      options.token
-    );
     localUserId = await client.join(
       options.appid,
       options.channel,
@@ -250,22 +303,29 @@ const handleUserPublished = async (user, mediaType) => {
     user.videoTrack.play("screenShare");
     document.getElementById("screenShareUid").innerHTML = uid;
     remoteScreenShareId = uid;
+    document.getElementById("shareBtn").disabled = true;
   }
 };
 
-const handleUserUnpublished = (user, mediaType) => {
+const handleUserUnpublished = async (user, mediaType) => {
+  console.log("handleUserUnpublished :: ", user);
   const { uid } = user;
   const isUser = userLists.some((userUid) => userUid === parseInt(uid));
+  await client.unsubscribe(user, mediaType);
   if (uid === remoteScreenShareId) {
-    document.getElementById(`screenShare`).remove();
+    document.getElementById(`screenShare`).style.display = "none";
     remoteScreenShareId = null;
-  } else if (isUser && mediaType === "video") {
-    document.getElementById(`player-${uid}-placeholder`).style.display =
-      "block";
-    document.getElementById(`player-${uid}-tag`).style.display = "none";
-    // document.getElementById(`player-wrapper-${uid}`).remove();
-  } else if (isUser && mediaType === "audio") {
-    document.getElementById(`player-${uid}-mic`).style.display = "block";
+    document.getElementById("shareBtn").disabled = false;
+  } else if (isUser) {
+    if (mediaType === "video") {
+      document.getElementById(`player-${uid}-placeholder`).style.display =
+        "block";
+      document.getElementById(`player-${uid}-tag`).style.display = "none";
+      // document.getElementById(`player-wrapper-${uid}`).remove();
+    }
+    if (mediaType === "audio") {
+      document.getElementById(`player-${uid}-mic`).style.display = "block";
+    }
   }
 };
 
@@ -282,7 +342,10 @@ const handleUserJoined = (user) => {
 const handleUserLeft = (user) => {
   const { uid } = user;
   joinedUsers = joinedUsers.filter((id) => id !== parseInt(uid));
-  document.getElementById(`player-wrapper-${uid}`).style.display = "none";
+  const isUser = userLists.some((userUid) => userUid === parseInt(uid));
+  if (isUser) {
+    document.getElementById(`player-wrapper-${uid}`).style.display = "none";
+  }
 };
 
 // ========================================================================================================================================================================
